@@ -19,6 +19,20 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 # Load config
 script_dir = os.path.dirname(os.path.abspath(__file__))
 config_path = os.path.join(script_dir, 'config.json')
+
+if not os.path.exists(config_path):
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showerror(
+        "Setup Required",
+        "config.json not found!\n\n"
+        "Create a config.json file in the same folder as this script:\n\n"
+        '{\n  "gemini_api_key": "your_key_here"\n}\n\n'
+        "Get a free API key at aistudio.google.com\n\n"
+        "See README.md for detailed instructions."
+    )
+    sys.exit(1)
+
 with open(config_path, 'r') as f:
     config = json.load(f)
 
@@ -207,6 +221,20 @@ def get_calendar_service(username: str):
     token_path = os.path.join(PROFILES_DIR, f'{username}_token.json')
     credentials_path = os.path.join(script_dir, 'credentials.json')
 
+    if not os.path.exists(credentials_path):
+        messagebox.showerror(
+            "Setup Required",
+            "credentials.json not found!\n\n"
+            "To set up:\n"
+            "1. Go to console.cloud.google.com\n"
+            "2. Enable the Google Calendar API\n"
+            "3. Create an OAuth 2.0 Desktop App credential\n"
+            "4. Download it and rename to credentials.json\n"
+            "5. Place it in the same folder as this script\n\n"
+            "See README.md for detailed instructions."
+        )
+        return None
+
     creds = None
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
@@ -214,8 +242,6 @@ def get_calendar_service(username: str):
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            if not os.path.exists(credentials_path):
-                raise FileNotFoundError(f"credentials.json not found in {script_dir}")
             flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
             creds = flow.run_local_server(port=0)
         with open(token_path, 'w') as token:
@@ -451,6 +477,8 @@ class CalendarEventGUI:
 
         try:
             service = get_calendar_service(self.username)
+            if service is None:
+                return
 
             self.status_label.config(text="Processing with AI...", foreground="orange")
             self.root.update()
@@ -476,10 +504,6 @@ class CalendarEventGUI:
 
             self.text_input.delete("1.0", tk.END)
 
-        except FileNotFoundError as e:
-            messagebox.showerror("Setup Error",
-                                 f"Missing credentials file:\n{str(e)}\n\n"
-                                 "Please ensure credentials.json is in the same folder as this script.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to create event:\n{str(e)}")
         finally:
@@ -514,6 +538,8 @@ class CalendarEventGUI:
                 return
 
             service = get_calendar_service(self.username)
+            if service is None:
+                return
 
             success_count = 0
             fail_count = 0
@@ -535,10 +561,6 @@ class CalendarEventGUI:
 
             messagebox.showinfo("Import Complete", result_msg)
 
-        except FileNotFoundError as e:
-            messagebox.showerror("Setup Error",
-                                 f"Missing credentials file:\n{str(e)}\n\n"
-                                 "Please ensure credentials.json is in the same folder as this script.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to import .ics file:\n{str(e)}")
         finally:
