@@ -1,0 +1,9 @@
+config.json
+token.json
+credentials.json
+bcb477f9-e7d5-4fce-b1ac-9d5fa95b42a5.ico
+CalendarImage.png
+Quick Calendar Event.vbs
+profiles/
+__pycache__/
+*.pyc
